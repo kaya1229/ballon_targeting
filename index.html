@@ -3,290 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>풍선 팡팡! 사진 찾기</title>
+    <title>Midnight Cheer: Project TRIANGLE</title>
     <style>
         :root {
-            --bg-color: #e0e7ff;
-            --red: #ff5e57;
-            --green: #1dd1a1;
-            --blue: #54a0ff;
+            --neo-green: #28FF43;
+            --retro-bg: #1a1a1a;
+            --wood-desk: #4a2c2a;
         }
 
         body {
-            margin: 0;
-            font-family: 'Pretendard', sans-serif;
-            background-color: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background-color: #050505;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
-            user-select: none;
-            height: 100vh;
-        }
-
-        /* 상단 UI */
-        #ui-layer {
-            width: 100%;
-            padding: 15px;
-            display: flex;
-            justify-content: space-around;
-            background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            z-index: 100;
-        }
-
-        .stat { font-size: 1.2rem; font-weight: 800; color: #333; }
-        #timer.warning { color: #ff3f34; animation: shake 0.2s infinite; }
-
-        /* 게임 필드 */
-        #game-board {
-            position: relative;
-            width: 95vw;
-            height: 80vh;
-            margin-top: 15px;
-            background: #fff;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 8px solid #c7d2fe;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
-        }
-
-        /* 사진 (바닥) */
-        .photo {
-            position: absolute;
-            width: 85px;
-            height: 85px;
-            background-size: cover;
-            background-position: center;
-            border-radius: 12px;
-            cursor: pointer;
-            z-index: 1;
-            border: 3px solid transparent;
-            transition: transform 0.2s;
-        }
-        .photo:active { transform: scale(0.9); }
-
-        /* 풍선 (상단) */
-        .balloon {
-            position: absolute;
-            width: 65px;
-            height: 80px;
-            border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
-            cursor: pointer;
-            z-index: 10;
-            box-shadow: inset -8px -10px 15px rgba(0,0,0,0.1), 0 10px 15px rgba(0,0,0,0.1);
             display: flex;
             justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
 
-        .balloon::before { /* 광택 */
-            content: '';
-            position: absolute;
-            top: 15%; left: 20%;
-            width: 15px; height: 25px;
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            transform: rotate(20deg);
+        /* 게임 보드 (교실 책상 느낌) */
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(to bottom, #222, var(--wood-desk));
+            border: 10px solid #333;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        .balloon::after { /* 매듭 */
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            width: 10px; height: 10px;
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-        }
-
-        .red { background: radial-gradient(circle at 30% 30%, #ff7675, #d63031); }
-        .red::after { background: #d63031; }
-        .green { background: radial-gradient(circle at 30% 30%, #55efc4, #00b894); }
-        .green::after { background: #00b894; }
-        .blue { background: radial-gradient(circle at 30% 30%, #74b9ff, #0984e3); }
-        .blue::after { background: #0984e3; }
-
-        /* 파티클 이펙트 */
-        .particle {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 15;
-        }
-
-        @keyframes particle-fade {
-            to { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; }
-        }
-
-        /* 패널티 깜빡임 */
-        .flash-red { animation: flash 0.3s; }
-        @keyframes flash {
-            0%, 100% { background-color: #fff; }
-            50% { background-color: rgba(255, 77, 77, 0.4); }
-        }
-
-        /* 결과창 */
-        #result-modal {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 40px;
-            border-radius: 25px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            z-index: 200;
-            width: 300px;
-        }
-
-        button {
-            background: #4a69bd;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 10px;
-            font-size: 1rem;
+        /* 상단 상태바 */
+        #status-bar {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
             font-weight: bold;
+            text-shadow: 0 0 5px var(--neo-green);
+        }
+
+        /* 선생님 감시창 (문 창문 느낌) */
+        #teacher-view {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 80px;
+            background: #111;
+            border: 4px solid #555;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #teacher-eye {
+            font-size: 40px;
+            display: none;
+            filter: drop-shadow(0 0 10px red);
+        }
+
+        /* PMP (덕질 화면) */
+        #pmp-screen {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            height: 200px;
+            background: #000;
+            border: 8px solid #444;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+        }
+
+        /* 은신 시 PMP 숨김 */
+        .hidden-pmp {
+            transform: translateX(-50%) translateY(250px) !important;
+            opacity: 0;
+        }
+
+        .triangle-logo {
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-bottom: 70px solid var(--neo-green);
+            filter: drop-shadow(0 0 15px var(--neo-green));
+            animation: pulse 1s infinite;
+        }
+
+        /* 응원 버튼 */
+        #cheer-btn {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 80px;
+            height: 80px;
+            background: var(--neo-green);
+            border-radius: 50%;
+            border: none;
             cursor: pointer;
-            margin-top: 15px;
+            font-weight: bold;
+            box-shadow: 0 0 20px var(--neo-green);
+            z-index: 10;
+        }
+
+        /* 은신 버튼 */
+        #hide-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 80px;
+            height: 80px;
+            background: #ff4444;
+            border-radius: 10px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        #warning-light {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.2);
+            display: none;
+            pointer-events: none;
+        }
+
+        .alert { animation: flash 0.5s infinite; }
+        @keyframes flash {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <div id="ui-layer">
-        <div class="stat">⏰ <span id="time-val">60</span>s</div>
-        <div class="stat">📸 <span id="score-val">0</span> / 3</div>
+<div id="game-container">
+    <div id="warning-light"></div>
+    
+    <div id="status-bar">
+        <div>SCORE: <span id="score">0</span></div>
+        <div>STAMINA: <span id="stamina">100</span>%</div>
     </div>
 
-    <div id="game-board"></div>
-
-    <div id="result-modal">
-        <h1 id="result-title">결과</h1>
-        <p id="result-msg"></p>
-        <button onclick="location.reload()">다시 도전!</button>
+    <div id="teacher-view">
+        <div id="teacher-eye">🕵️‍♂️</div>
+        <div id="teacher-msg" style="font-size: 10px; color: #555;">SILENT...</div>
     </div>
 
-    <script>
-        const TARGET_COUNT = 3;
-        const DECOY_COUNT = 10;
-        const BALLOON_COUNT = 130;
-        let timeLeft = 60;
-        let score = 0;
-        let gameActive = true;
+    <div id="pmp-screen" class="">
+        <div class="triangle-logo"></div>
+        <p style="color: var(--neo-green); font-size: 12px; margin-top: 10px;">NOW PLAYING: TRIANGLE</p>
+    </div>
 
-        // ** 파일명을 본인이 업로드한 사진으로 꼭 바꾸세요! **
-        const TARGET_IMAGES = ['target1.jpg', 'target2.jpg', 'target3.jpg'];
-        const DECOY_IMAGES = ['decoy1.jpg', 'decoy2.jpg', 'decoy3.jpg', 'decoy4.jpg'];
+    <button id="cheer-btn">TAP!<br>CHEER</button>
+    <button id="hide-btn">STUDY<br>(HIDE)</button>
+</div>
 
-        const board = document.getElementById('game-board');
-        const timeDisplay = document.getElementById('time-val');
-        const scoreDisplay = document.getElementById('score-val');
+<script>
+    let score = 0;
+    let stamina = 100;
+    let isHiding = false;
+    let isTeacherWatching = false;
+    let gameActive = true;
 
-        function initGame() {
-            createItems(TARGET_IMAGES, 'target', TARGET_COUNT);
-            createItems(DECOY_IMAGES, 'decoy', DECOY_COUNT);
+    const scoreEl = document.getElementById('score');
+    const staminaEl = document.getElementById('stamina');
+    const teacherEye = document.getElementById('teacher-eye');
+    const teacherMsg = document.getElementById('teacher-msg');
+    const pmpScreen = document.getElementById('pmp-screen');
+    const warningLight = document.getElementById('warning-light');
 
-            for (let i = 0; i < BALLOON_COUNT; i++) {
-                createBalloon();
-            }
-
-            const timerInterval = setInterval(() => {
-                if (!gameActive) { clearInterval(timerInterval); return; }
-                timeLeft--;
-                timeDisplay.innerText = timeLeft;
-                if (timeLeft <= 0) endGame(false);
-            }, 1000);
+    // 응원하기 버튼
+    document.getElementById('cheer-btn').addEventListener('mousedown', () => {
+        if (!gameActive || isHiding) return;
+        
+        if (isTeacherWatching) {
+            gameOver("선생님께 걸렸습니다! 야자실 퇴실!");
+        } else {
+            score += 10;
+            scoreEl.innerText = score;
+            // 연타 시 시각 효과
+            pmpScreen.style.boxShadow = "0 0 30px var(--neo-green)";
+            setTimeout(() => pmpScreen.style.boxShadow = "none", 100);
         }
+    });
 
-        function createItems(imgArray, type, count) {
-            for (let i = 0; i < count; i++) {
-                const img = document.createElement('div');
-                img.className = 'photo';
-                img.dataset.type = type;
-                img.style.backgroundImage = `url('${imgArray[i % imgArray.length]}')`;
-                
-                img.style.left = Math.random() * (board.clientWidth - 90) + 'px';
-                img.style.top = Math.random() * (board.clientHeight - 90) + 'px';
+    // 은신하기 버튼 (누르고 있는 동안만 숨음)
+    const hideBtn = document.getElementById('hide-btn');
+    hideBtn.addEventListener('mousedown', () => {
+        isHiding = true;
+        pmpScreen.classList.add('hidden-pmp');
+    });
 
-                img.addEventListener('click', (e) => {
-                    if (!gameActive) return;
-                    if (type === 'target') {
-                        if (img.style.opacity === '0.4') return;
-                        score++;
-                        scoreDisplay.innerText = score;
-                        img.style.opacity = '0.4';
-                        img.style.border = '4px solid #fbc531';
-                        if (score === TARGET_COUNT) endGame(true);
-                    } else {
-                        applyPenalty();
-                    }
-                });
-                board.appendChild(img);
-            }
-        }
+    window.addEventListener('mouseup', () => {
+        isHiding = false;
+        pmpScreen.classList.remove('hidden-pmp');
+    });
 
-        function createBalloon() {
-            const b = document.createElement('div');
-            const colorKeys = ['red', 'green', 'blue'];
-            const colorClass = colorKeys[Math.floor(Math.random() * 3)];
-            b.className = `balloon ${colorClass}`;
+    // 선생님 감시 로직
+    function teacherLoop() {
+        if (!gameActive) return;
 
-            b.style.left = Math.random() * (board.clientWidth - 70) + 'px';
-            b.style.top = Math.random() * (board.clientHeight - 90) + 'px';
+        // 선생님이 오기 전 경고 (2~4초 무작위)
+        let nextCheck = Math.random() * 3000 + 2000;
 
-            b.addEventListener('mousedown', (e) => {
-                if (!gameActive) return;
-                createBurst(e.clientX, e.clientY, colorClass);
-                b.remove();
-            });
-            board.appendChild(b);
-        }
-
-        // 터지는 파티클 효과 함수
-        function createBurst(x, y, colorClass) {
-            const colorMap = { 'red': '#ff4d4d', 'green': '#2ecc71', 'blue': '#3498db' };
-            const boardRect = board.getBoundingClientRect();
+        setTimeout(() => {
+            if (!gameActive) return;
             
-            for (let i = 0; i < 8; i++) {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                p.style.backgroundColor = colorMap[colorClass];
+            // 경고 상태
+            warningLight.style.display = 'block';
+            teacherMsg.innerText = "HEARING FOOTSTEPS...";
+            teacherMsg.style.color = "red";
+
+            // 1.5초 후 선생님 등장
+            setTimeout(() => {
+                if (!gameActive) return;
                 
-                // 마우스 클릭 위치를 게임 보드 내부 좌표로 변환
-                p.style.left = (x - boardRect.left) + 'px';
-                p.style.top = (y - boardRect.top) + 'px';
+                isTeacherWatching = true;
+                teacherEye.style.display = 'block';
+                teacherMsg.innerText = "WATCHING!!!";
+                
+                // 선생님이 1~2초간 감시
+                setTimeout(() => {
+                    isTeacherWatching = false;
+                    teacherEye.style.display = 'none';
+                    warningLight.style.display = 'none';
+                    teacherMsg.innerText = "SILENT...";
+                    teacherMsg.style.color = "#555";
+                    teacherLoop(); // 다음 루프 시작
+                }, Math.random() * 1000 + 1000);
 
-                // 랜덤 파편 방향
-                const angle = Math.random() * Math.PI * 2;
-                const dist = 50 + Math.random() * 50;
-                p.style.setProperty('--x', Math.cos(angle) * dist + 'px');
-                p.style.setProperty('--y', Math.sin(angle) * dist + 'px');
+            }, 1500);
+        }, nextCheck);
+    }
 
-                p.style.animation = 'particle-fade 0.4s ease-out forwards';
-                board.appendChild(p);
-                setTimeout(() => p.remove(), 400);
-            }
+    function gameOver(msg) {
+        gameActive = false;
+        alert(msg + "\n최종 점수: " + score);
+        location.reload();
+    }
+
+    // 게임 시작
+    teacherLoop();
+
+    // 스테미나 감소 로직 (연타 안하면 조금씩 감소 등 추가 가능)
+    setInterval(() => {
+        if (gameActive && !isHiding) {
+            // 응원 중일 때의 긴장감으로 스테미나 조절 로직 추가 가능
         }
+    }, 1000);
 
-        function applyPenalty() {
-            timeLeft = Math.max(0, timeLeft - 5);
-            timeDisplay.innerText = timeLeft;
-            board.classList.add('flash-red');
-            setTimeout(() => board.classList.remove('flash-red'), 300);
-        }
-
-        function endGame(isWin) {
-            gameActive = false;
-            const modal = document.getElementById('result-modal');
-            modal.style.display = 'block';
-            document.getElementById('result-title').innerText = isWin ? "🎉 클리어!" : "❌ 게임 오버";
-            document.getElementById('result-msg').innerText = isWin ? 
-                `남은 시간 ${timeLeft}초! 대단해요!` : "시간이 부족했어요. 다시 해볼까요?";
-        }
-
-        window.onload = initGame;
-    </script>
+</script>
 </body>
 </html>
