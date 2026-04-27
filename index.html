@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Midnight Cheer: Project TRIANGLE</title>
+    <title>Resonance: Project TRIANGLE</title>
     <style>
         :root {
             --neo-green: #28FF43;
-            --teacher-red: #ff4444;
+            --warning-orange: #FFD328;
+            --danger-red: #FF4444;
+            --desk-wood: #5e3b33;
+            --bg-dark: #121212;
         }
 
         body {
-            background-color: #000;
+            background-color: #050505;
             color: white;
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
@@ -20,328 +23,422 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            user-select: none; /* 드래그 방지 */
         }
 
-        /* 게임 보드 (실제 교실 배경 사용) */
+        /* 메인 게임 화면 (교실 테마) */
         #game-container {
             position: relative;
-            width: 400px;
-            height: 600px;
-            /* [필수] 실제 교실 배경 이미지 */
-            background-image: url('classroom_bg.jpg'); 
+            width: 480px;
+            height: 700px;
+            background-color: var(--bg-dark);
+            /* background-image: url('pixel_classroom_bg.png'); */ /* [팁] 여기에 픽셀 배경 이미지 */
             background-size: cover;
-            background-position: center;
-            border: 10px solid #333;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            border: 8px solid #333;
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
         }
 
-        /* 흐릿한 오버레이 (노스탤지어 감성) */
-        #game-container::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5); /* 배경을 어둡게 */
-            z-index: 1;
-        }
-
-        /* 모든 UI 요소는 오버레이 위에 배치 */
-        #status-bar, #teacher-view, #pmp-screen, #student-character, .btn {
-            z-index: 2;
-        }
-
-        /* 상단 상태바 */
-        #status-bar {
-            position: relative;
-            padding: 15px;
+        /* --- 상단 UI 영역 --- */
+        #ui-header {
+            padding: 20px;
+            background: rgba(0,0,0,0.5);
+            border-bottom: 2px solid #333;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+
+        #score-board {
+            font-size: 18px;
             font-weight: bold;
             text-shadow: 0 0 5px var(--neo-green);
         }
 
-        /* 선생님 감시창 (문 창문 느낌) */
-        #teacher-view {
-            position: absolute;
-            top: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 70px;
-            background: rgba(17, 17, 17, 0.8);
-            border: 4px solid #555;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* 데시벨 미터기 */
+        #db-container {
+            width: 150px;
+            height: 20px;
+            background: #222;
+            border: 2px solid #555;
+            position: relative;
             overflow: hidden;
         }
 
-        #teacher-eye {
-            font-size: 40px;
-            display: none;
-            filter: drop-shadow(0 0 10px var(--teacher-red));
+        #db-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--neo-green);
+            transition: 0.1s linear;
+            box-shadow: 0 0 10px var(--neo-green);
         }
 
-        /* 주인공 캐릭터 영역 */
-        #student-character {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            height: 250px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center bottom;
-            transition: 0.2s;
-            /* [필수] 공부하는 평소 모습 */
-            background-image: url('student_normal.png'); 
+        /* --- 교실 (책상 격자) 영역 --- */
+        #classroom-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+            justify-items: center;
+            align-items: center;
         }
 
-        /* PMP (캐릭터 손 근처에 배치) */
-        #pmp-screen {
-            position: absolute;
-            bottom: 180px; /* 캐릭터 손 위치에 맞춤 */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 90px;
-            background: #000;
-            border: 4px solid #444;
-            border-radius: 5px;
+        /* 각 책상 슬롯 */
+        .desk-slot {
+            position: relative;
+            width: 110px;
+            height: 110px;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: 0.3s;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* 은신 시 PMP 숨김 (캐릭터도 공부 모드로) */
-        .hidden-pmp {
-            transform: translateX(-50%) translateY(150px) scale(0.5) !important;
-            opacity: 0;
+        /* 학생 캐릭터 스타일 (픽셀 이미지로 대체 가능) */
+        .student {
+            width: 80px;
+            height: 80px;
+            background-color: #444; /* 공부 중일 때 색 */
+            border-radius: 10px;
+            border: 4px solid #222;
+            position: relative;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
         }
 
-        .triangle-logo {
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-bottom: 35px solid var(--neo-green);
-            filter: drop-shadow(0 0 10px var(--neo-green));
-            animation: pulse 1s infinite;
-        }
-
-        /* 버튼 공통 스타일 */
-        .btn {
+        /* 책상 (캐릭터 앞에 배치) */
+        .desk-front {
             position: absolute;
-            bottom: 20px;
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            font-family: inherit;
-            transition: 0.1s;
-            z-index: 10;
+            bottom: 0;
+            width: 100%;
+            height: 30px;
+            background-color: var(--desk-wood);
+            border: 2px solid #333;
+            border-radius: 5px;
+            z-index: 2;
         }
 
+        /* 주인공 표시 */
+        .is-hero {
+            border-color: var(--warning-orange);
+            box-shadow: 0 0 10px var(--warning-orange);
+        }
+        
+        .hero-tag {
+            position: absolute;
+            top: -15px;
+            font-size: 10px;
+            color: var(--warning-orange);
+            font-weight: bold;
+        }
+
+        /* --- 상태별 애니메이션 --- */
+        
+        /* 응원 중 상태 */
+        .cheering {
+            background-color: #222;
+            border-color: var(--neo-green);
+            box-shadow: 0 0 15px var(--neo-green);
+            animation: vibrate 0.1s infinite;
+        }
+        
+        .cheering::after {
+            content: '▲'; /* 풍선/응원 아이콘 */
+            font-size: 30px;
+            color: var(--neo-green);
+            filter: drop-shadow(0 0 5px var(--neo-green));
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-1px, -1px); }
+            100% { transform: translate(1px, -1px); }
+        }
+
+        /* --- 하단 컨트롤 버튼 영역 --- */
+        #controls {
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            border-top: 2px solid #333;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .btn {
+            width: 120px;
+            height: 50px;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        
         .btn:active { transform: scale(0.95); }
 
-        /* 응원 버튼 */
-        #cheer-btn {
-            left: 40px;
-            background: var(--neo-green);
-            box-shadow: 0 0 20px var(--neo-green);
-            color: #000;
+        #btn-cheer {
+            background-color: var(--neo-green);
+            color: black;
+            box-shadow: 0 0 15px var(--neo-green);
         }
 
-        /* 은신 버튼 */
-        #hide-btn {
-            right: 40px;
-            background: var(--teacher-red);
-            border-radius: 10px; /* 공부 버튼은 사각형 */
+        #btn-study {
+            background-color: #444;
             color: white;
+            border: 2px solid #555;
+        }
+        
+        /* 선택된 버튼 강조 */
+        .active-mode {
+            outline: 4px solid white;
+            outline-offset: 2px;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-
-        /* 경고 붉은 레이저 시야 */
-        #warning-light {
+        /* 선생님 감시 오버레이 */
+        #teacher-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(255, 0, 0, 0) 0%, rgba(255,0,0,0.3) 50%, rgba(255,0,0,0) 100%);
+            background: rgba(255, 0, 0, 0.4);
             display: none;
-            pointer-events: none;
-            z-index: 5;
-            animation: scan 1s infinite;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            animation: flash 0.3s infinite;
         }
-
-        @keyframes scan {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
+        @keyframes flash { 0%, 100% {opacity: 1;} 50% {opacity: 0.5;} }
 
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="warning-light"></div>
-    
-    <div id="status-bar">
-        <div>SCORE: <span id="score">0</span></div>
+    <div id="teacher-overlay"><h1>TEACHER INSIDE!</h1></div>
+
+    <div id="ui-header">
+        <div id="score-board">SCORE: <span id="score">0</span></div>
+        <div style="text-align: right;">
+            <div style="font-size: 10px; color: #aaa; margin-bottom: 2px;">교실 dB</div>
+            <div id="db-container">
+                <div id="db-bar"></div>
+            </div>
+        </div>
     </div>
 
-    <div id="teacher-view">
-        <div id="teacher-eye">🕵️‍♂️</div>
-        <div id="teacher-msg" style="font-size: 10px; color: #aaa;">SILENT...</div>
+    <div id="classroom-grid">
+        <script>
+            for(let i=0; i<9; i++) {
+                const isHero = i === 4;
+                document.write(`
+                    <div class="desk-slot">
+                        <div id="student-${i}" class="student ${isHero ? 'is-hero' : ''}">
+                            ${isHero ? '<span class="hero-tag">YOU</span>' : ''}
+                        </div>
+                        <div class="desk-front"></div>
+                    </div>
+                `);
+            }
+        </script>
     </div>
 
-    <div id="student-character"></div>
-
-    <div id="pmp-screen">
-        <div class="triangle-logo"></div>
-        <p style="color: var(--neo-green); font-size: 8px; margin-top: 5px; text-align:center;">NOW:<br>TRIANGLE</p>
+    <div id="controls">
+        <button id="btn-study" class="btn active-mode">공부하기<br>(dB 줄이기)</button>
+        <button id="btn-cheer" class="btn">응원하기<br>(전염시키기)</button>
     </div>
-
-    <button id="cheer-btn" class="btn">TAP!<br>CHEER</button>
-    <button id="hide-btn" class="btn">STUDY<br>(HIDE)</button>
 </div>
 
 <script>
+    // --- 게임 데이터 및 상태 ---
     let score = 0;
-    let isHiding = false;
-    let isTeacherWatching = false;
+    let dbLevel = 0;
+    const MAX_DB = 100;
+    const GAME_DURATION = 60; // 게임 시간 (초, 예: 노래 길이)
+    let timeLeft = GAME_DURATION;
     let gameActive = true;
 
+    // 책상 상태 배열 (0: 공부, 1: 응원)
+    let deskStates = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const HERO_INDEX = 4; // 주인공 위치 (중앙)
+
+    // DOM 요소
     const scoreEl = document.getElementById('score');
-    const teacherEye = document.getElementById('teacher-eye');
-    const teacherMsg = document.getElementById('teacher-msg');
-    const pmpScreen = document.getElementById('pmp-screen');
-    const studentChar = document.getElementById('student-character');
-    const warningLight = document.getElementById('warning-light');
+    const dbBarEl = document.getElementById('db-bar');
+    const btnCheer = document.getElementById('btn-cheer');
+    const btnStudy = document.getElementById('btn-study');
+    const teacherOverlay = document.getElementById('teacher-overlay');
 
-    // [캐릭터 이미지 경로] - 준비한 파일명과 맞춰주세요
-    const imgNormal = "student_normal.png";
-    const imgCheer = "student_cheer.png";
+    // --- 컨트롤러 로직 ---
 
-    // 응원하기 버튼 (클릭 시 캐릭터 변경 및 점수)
-    const cheerBtn = document.getElementById('cheer-btn');
-    
-    function startCheering() {
-        if (!gameActive || isHiding) return;
+    // 응원하기 모드 전환
+    btnCheer.addEventListener('click', () => {
+        if (!gameActive) return;
+        deskStates[HERO_INDEX] = 1; // 주인공 응원 시작
+        btnCheer.classList.add('active-mode');
+        btnStudy.classList.remove('active-mode');
+        updateVisuals();
+    });
+
+    // 공부하기 모드 전환
+    btnStudy.addEventListener('click', () => {
+        if (!gameActive) return;
+        deskStates[HERO_INDEX] = 0; // 주인공 공부 시작
+        btnStudy.classList.add('active-mode');
+        btnCheer.classList.remove('active-mode');
+        updateVisuals();
+    });
+
+    // --- 핵심 게임 로직 루프 (1초마다 실행) ---
+    const gameLoop = setInterval(() => {
+        if (!gameActive) return;
+
+        timeLeft--;
+        const cheeringCount = deskStates.filter(state => state === 1).length;
+
+        // 1. 점수 산정 (응원 인원이 많을수록 폭발적 상승, High Risk High Return)
+        // 공식: 인원수의 제곱 * 10
+        score += cheeringCount * cheeringCount * 10;
+        scoreEl.innerText = score.toLocaleString();
+
+        // 2. dB 및 전염 로직 (주인공 상태에 따라 달라짐)
         
-        if (isTeacherWatching) {
-            gameOver("선생님께 걸렸습니다! 압수!");
+        if (deskStates[HERO_INDEX] === 1) { 
+            // --- [주인공 응원 중] ---
+            
+            // dB 상승 (인원수에 비례)
+            dbLevel = Math.min(MAX_DB, dbLevel + cheeringCount * 1.5);
+
+            // 열기 확산 (전염): 30% 확률로 인접한 무작위 친구 전염
+            if (Math.random() < 0.3 && cheeringCount < 9) {
+                spreadCheer();
+            }
         } else {
-            score += 10;
-            scoreEl.innerText = score;
+            // --- [주인공 공부 중] ---
             
-            // 캐릭터 응원 모습으로 변경
-            studentChar.style.backgroundImage = `url('${imgCheer}')`;
-            
-            // 연타 시 시각 효과
-            pmpScreen.style.boxShadow = "0 0 30px var(--neo-green)";
-            setTimeout(() => pmpScreen.style.boxShadow = "none", 50);
+            // dB 자연 감소
+            dbLevel = Math.max(0, dbLevel - 4);
+
+            // 열기 식히기: 50% 확률로 가장 나중에 응원한 친구부터 공부 시작
+            if (Math.random() < 0.5 && cheeringCount > 0) {
+                stopCheerOne();
+            }
+        }
+
+        updateDBMeter();
+        updateVisuals();
+        checkGameOver();
+
+        if (timeLeft <= 0) {
+            endGame("노래 끝! 응원 성공!", true);
+        }
+    }, 1000);
+
+    // --- 유틸리티 함수들 ---
+
+    // 무작위 친구 한 명 전염 (주인공과 가까운 인덱스 선호 로직 추가 가능)
+    function spreadCheer() {
+        let potentialFriends = [];
+        deskStates.forEach((state, index) => {
+            if (state === 0 && index !== HERO_INDEX) potentialFriends.push(index);
+        });
+        
+        if (potentialFriends.length > 0) {
+            const victim = potentialFriends[Math.floor(Math.random() * potentialFriends.length)];
+            deskStates[victim] = 1;
         }
     }
 
-    function stopCheering() {
-        if (!gameActive || isHiding) return;
-        // 다시 공부하는 모습으로
-        studentChar.style.backgroundImage = `url('${imgNormal}')`;
+    // 무작위 친구 한 명 응원 중단
+    function stopCheerOne() {
+        let cheeringFriends = [];
+        deskStates.forEach((state, index) => {
+            if (state === 1 && index !== HERO_INDEX) cheeringFriends.push(index);
+        });
+
+        if (cheeringFriends.length > 0) {
+            const friend = cheeringFriends[Math.floor(Math.random() * cheeringFriends.length)];
+            deskStates[friend] = 0;
+        }
     }
 
-    cheerBtn.addEventListener('mousedown', startCheering);
-    cheerBtn.addEventListener('mouseup', stopCheering);
-    // 모바일 터치 대응
-    cheerBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startCheering(); });
-    cheerBtn.addEventListener('touchend', stopCheering);
-
-
-    // 은신하기 버튼 (누르고 있는 동안 캐릭터 숨김 및 공부 모드)
-    const hideBtn = document.getElementById('hide-btn');
-    
-    function startHiding() {
-        if (!gameActive) return;
-        isHiding = true;
-        pmpScreen.classList.add('hidden-pmp');
-        // 캐릭터는 무조건 공부하는 모습으로 고정
-        studentChar.style.backgroundImage = `url('${imgNormal}')`;
-        studentChar.style.opacity = "0.7"; // 공부 집중 모드 표시
+    // dB 미터기 및 선생님 주의력 연출 업데이트
+    function updateDBMeter() {
+        dbBarEl.style.width = `${dbLevel}%`;
+        
+        // dB 수준에 따른 색상 변경
+        if (dbLevel > 80) {
+            dbBarEl.style.backgroundColor = 'var(--danger-red)';
+            dbBarEl.style.boxShadow = '0 0 15px var(--danger-red)';
+            // 들키기 직전 경고 깜빡임 연출
+            document.getElementById('db-container').style.animation = 'flash 0.2s infinite';
+        } else if (dbLevel > 50) {
+            dbBarEl.style.backgroundColor = 'var(--warning-orange)';
+            dbBarEl.style.boxShadow = '0 0 10px var(--warning-orange)';
+            document.getElementById('db-container').style.animation = 'none';
+        } else {
+            dbBarEl.style.backgroundColor = 'var(--neo-green)';
+            dbBarEl.style.boxShadow = '0 0 10px var(--neo-green)';
+            document.getElementById('db-container').style.animation = 'none';
+        }
     }
 
-    function stopHiding() {
-        if (!gameActive) return;
-        isHiding = false;
-        pmpScreen.classList.remove('hidden-pmp');
-        studentChar.style.opacity = "1";
+    // 학생 캐릭터들의 시각적 상태 업데이트
+    function updateVisuals() {
+        deskStates.forEach((state, index) => {
+            const studentEl = document.getElementById(`student-${index}`);
+            if (state === 1) {
+                studentEl.classList.add('cheering');
+            } else {
+                studentEl.classList.remove('cheering');
+            }
+        });
     }
 
-    hideBtn.addEventListener('mousedown', startHiding);
-    window.addEventListener('mouseup', stopHiding); // 화면 어디든 떼면 은신 해제
-    // 모바일 터치 대응
-    hideBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHiding(); });
-    window.addEventListener('touchend', stopHiding);
-
-
-    // 선생님 감시 로직 (잠입 긴장감 패턴)
-    function teacherLoop() {
-        if (!gameActive) return;
-
-        // 선생님이 오기 전 경고 (3~6초 무작위)
-        let nextCheck = Math.random() * 3000 + 3000;
-
-        setTimeout(() => {
-            if (!gameActive) return;
+    // 선생님 급습 및 게임 오버 체크
+    function checkGameOver() {
+        // dB가 90을 넘으면 선생님이 급습할 확률이 매우 높아짐
+        if (dbLevel >= 90) {
+            gameActive = false;
+            teacherOverlay.style.display = 'flex';
             
-            // 1단계: 경고 (붉은 레이저 시야 스캔 시작)
-            warningLight.style.display = 'block';
-            teacherMsg.innerText = "FOOTSTEPS...";
-            teacherMsg.style.color = var(--teacher-red);
-
-            // 1.5초 후 2단계: 선생님 등장
+            // 0.5초 후 최종 판정 (이 찰나의 순간에 공부 버튼을 누르면 살 수도 있음)
             setTimeout(() => {
-                if (!gameActive) return;
-                
-                isTeacherWatching = true;
-                teacherEye.style.display = 'block';
-                teacherMsg.innerText = "WATCHING!!!";
-                
-                // 선생님이 1.5~3초간 감시
-                setTimeout(() => {
-                    if (!gameActive) return;
-                    isTeacherWatching = false;
-                    teacherEye.style.display = 'none';
-                    warningLight.style.display = 'none'; // 레이저 스캔 끔
-                    teacherMsg.innerText = "SILENT...";
-                    teacherMsg.style.color = "#aaa";
-                    teacherLoop(); // 다음 루프 시작
-                }, Math.random() * 1500 + 1500);
-
-            }, 1500);
-        }, nextCheck);
+                const cheeringCount = deskStates.filter(state => state === 1).length;
+                if (cheeringCount > 0) {
+                    endGame("선생님께 들켰습니다! 트라이앵글 로고를 압수당했습니다.", false);
+                } else {
+                    // 기적적으로 다 공부 중이면 선생님이 투덜대며 나감
+                    teacherOverlay.style.display = 'none';
+                    gameActive = true;
+                    dbLevel = 50; // dB 반으로 줄여줌
+                    teacherLoop(); 
+                }
+            }, 500);
+        }
     }
 
-    function gameOver(msg) {
+    function endGame(msg, success) {
         gameActive = false;
-        // 캐릭터를 발각된 모습으로 변경 (normal 이미지에 붉은 틴트 등 CSS 활용 가능)
-        studentChar.style.filter = "sepia(1) saturate(5) hue-rotate(-50deg)"; 
-        alert(msg + "\n최종 점수: " + score);
+        clearInterval(gameLoop);
+        teacherOverlay.style.display = 'none';
+        
+        // 최종 등급 산정 (랭킹전 UI 대용)
+        let rank = "F (일반 학생)";
+        if (success) {
+            if (score > 10000) rank = "S (열혈 가디언)";
+            else if (score > 5000) rank = "A (우등생 팬)";
+            else if (score > 2000) rank = "B (초보 팬)";
+        }
+
+        alert(`${msg}\n\n최종 점수: ${score.toLocaleString()}\n당신의 서열: ${rank}`);
         location.reload();
     }
-
-    // 게임 시작
-    teacherLoop();
 
 </script>
 </body>
